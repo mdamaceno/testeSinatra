@@ -1,32 +1,15 @@
-require 'sinatra'
-require 'sinatra/json'
-require "sinatra/reloader" if development?
+#config
+require 'lotus/router'
 require 'mongoid'
 require 'json/ext'
 
-# include Mongo
+Mongoid.load!("./config/mongoid.yml",:development)
 
-# configure do
-#   conn = MongoClient.new("localhost", 27017)
-#   set :mongo_connection, conn
-#   set :mongo_db, conn.db('churchApp')
-# end
+# Models Load
+require './models/origins'
 
-Mongoid.load!("./config/mongoid.yml")
-
-require './models/origin'
-
-before do
-  content_type :json
+app = Lotus::Router.new(parsers: [:json]) do
+  get '/', to: ->(env) { [404, {'by' => 'sds'}, [Models::Origins.all.to_json]] }
 end
 
-set :public_folder, File.dirname(__FILE__) + '/public'
-
-get '/' do
-  json hello: "Hello World"
-end
-
-get '/api/seguimentos' do
-  @origins = Origin.find
-  @origins.to_a.to_json
-end
+Rack::Server.start app: app, Port: 4567
